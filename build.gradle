@@ -1,14 +1,31 @@
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import net.fabricmc.loom.NavigatorGradlePlugin
+
+buildscript {
+	repositories {
+		mavenCentral()
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		maven {
+			name = 'mojang'
+			url = 'https://libraries.minecraft.net/'
+		}
+	}
+	dependencies {
+		classpath 'net.fabricmc:fabric-loom:0.3.0-SNAPSHOT'
+	}
+}
 
 plugins {
 	id 'java'
 	id 'maven-publish'
 
-	id 'idea'
 	id 'eclipse'
-	id("fabric-loom") version "0.2.0-SNAPSHOT"
+	id("fabric-loom") version "0.3.0-SNAPSHOT"
 }
 
 sourceCompatibility = 1.8
@@ -37,10 +54,12 @@ repositories {
 	}
 }
 
-dependencies {
-	minecraft "com.mojang:minecraft:19w14b"
-	mappings "net.fabricmc:yarn:19w14b.4"
+starmade{
+	version = "0.201.370"
+	mappings "net.distortsm:reality:0.201.370"
+}
 
+dependencies {
 	// Minecraft's JAR uses these annotations
 	compile 'com.google.code.findbugs:jsr305:3.0.2'
 
@@ -50,6 +69,8 @@ dependencies {
 	compile 'org.ow2.asm:asm-commons:7.1'
 	compile 'org.ow2.asm:asm-tree:7.1'
 	compile 'org.ow2.asm:asm-util:7.1'
+	compile 'org.apache.logging.log4j:log4j-api:2.8.1'
+	compile 'org.apache.logging.log4j:log4j-core:2.8.1'
 
 	compile('net.fabricmc:sponge-mixin:0.7.11.17') {
 		exclude module: 'launchwrapper'
@@ -127,23 +148,12 @@ String getClasspathEntries(){
 	return classPath;
 }
 
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
-
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
 			// add all the jars that should be included when publishing to maven
 			artifact(jar) {
 				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
 			}
 			artifact(file('src/main/resources/fabric-installer.json')) {
 				builtBy remapJar
@@ -168,5 +178,11 @@ publishing {
 		}
 	}
 }
+
+artifacts {
+	archives file("src/main/resources/fabric-installer.json")
+}
+
+apply from: 'https://github.com/FabricMC/fabric-docs/raw/master/gradle/maven.gradle'
 apply from: 'https://github.com/FabricMC/fabric-docs/raw/master/gradle/license.gradle'
 apply from: 'https://github.com/FabricMC/fabric-docs/raw/master/gradle/ideconfig.gradle'
