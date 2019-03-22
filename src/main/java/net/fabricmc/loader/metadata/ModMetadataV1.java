@@ -27,7 +27,6 @@ import net.fabricmc.loader.api.metadata.ContactInformation;
 import net.fabricmc.loader.api.metadata.ModDependency;
 import net.fabricmc.loader.util.version.VersionParsingException;
 import net.fabricmc.loader.util.version.VersionPredicateParser;
-import org.apache.commons.lang3.reflect.TypeUtils;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -368,6 +367,7 @@ public class ModMetadataV1 implements LoaderModMetadata {
 			@Override
 			public Person deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
 				Person person = new Person();
+				final ParameterizedType mapType = (ParameterizedType)new TypeToken<HashMap<String,String>>(){}.getType();
 
 				if (json.isJsonObject()) {
 					JsonObject obj = json.getAsJsonObject();
@@ -378,7 +378,7 @@ public class ModMetadataV1 implements LoaderModMetadata {
 					person.name = obj.get("name").getAsString();
 					if (obj.has("contact")) {
 						person.contact = new MapBackedContactInformation(
-							context.deserialize(obj.get("contact"), TypeUtils.parameterize(HashMap.class, String.class, String.class))
+							context.deserialize(obj.get("contact"), mapType)
 						);
 					}
 				} else if (json.isJsonPrimitive()) {

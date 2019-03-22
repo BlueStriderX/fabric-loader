@@ -1,7 +1,7 @@
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import net.fabricmc.loom.LoomGradlePlugin
+import net.fabricmc.loom.NavigatorGradlePlugin
 
 buildscript {
 	repositories {
@@ -16,7 +16,7 @@ buildscript {
 		}
 	}
 	dependencies {
-		classpath 'net.fabricmc:fabric-loom:0.2.0-SNAPSHOT'
+		classpath 'net.fabricmc:fabric-loom:0.3.0-SNAPSHOT'
 	}
 }
 
@@ -24,10 +24,9 @@ plugins {
 	id 'java'
 	id 'maven'
 
-	id 'idea'
 	id 'eclipse'
 }
-apply plugin: LoomGradlePlugin
+apply plugin: NavigatorGradlePlugin
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -55,10 +54,12 @@ repositories {
 	}
 }
 
-dependencies {
-	minecraft "com.mojang:minecraft:19w05a"
-	mappings "net.fabricmc:yarn:19w05a.6"
+starmade{
+	version = "0.201.370"
+	mappings "net.distortsm:reality:0.201.370"
+}
 
+dependencies {
 	// Minecraft's JAR uses these annotations
 	compile 'com.google.code.findbugs:jsr305:3.0.2'
 
@@ -68,6 +69,8 @@ dependencies {
 	compile 'org.ow2.asm:asm-commons:7.0'
 	compile 'org.ow2.asm:asm-tree:7.0'
 	compile 'org.ow2.asm:asm-util:7.0'
+	compile 'org.apache.logging.log4j:log4j-api:2.8.1'
+	compile 'org.apache.logging.log4j:log4j-core:2.8.1'
 
 	compile('net.fabricmc:sponge-mixin:0.7.11.16') {
 		exclude module: 'launchwrapper'
@@ -147,11 +150,6 @@ String getClasspathEntries(){
 
 artifacts {
 	archives file("src/main/resources/fabric-installer.json")
-}
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
 }
 
 apply from: 'https://github.com/FabricMC/fabric-docs/raw/master/gradle/maven.gradle'
