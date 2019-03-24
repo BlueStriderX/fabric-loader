@@ -34,7 +34,9 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.*;
+import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
@@ -86,7 +88,9 @@ public final class Knot extends FabricLauncherBase {
 		// Setup classloader
 		// TODO: Provide KnotCompatibilityClassLoader in non-exclusive-Fabric pre-1.13 environments?
 		boolean useCompatibility = Boolean.parseBoolean(System.getProperty("fabric.loader.useCompatibilityClassLoader", "false"));
-		loader = useCompatibility ? new KnotCompatibilityClassLoader(isDevelopment(), envType) : new KnotClassLoader(isDevelopment(), envType);
+		loader = useCompatibility
+			? new KnotCompatibilityClassLoader(isDevelopment(), envType)
+			: new KnotClassLoader(isDevelopment(), envType);
 
 		String[] classpathStringsIn = System.getProperty("java.class.path").split(File.pathSeparator);
 		List<String> classpathStrings = new ArrayList<>(classpathStringsIn.length);
@@ -125,6 +129,11 @@ public final class Knot extends FabricLauncherBase {
 		MixinEnvironment.getDefaultEnvironment().setSide(envType == EnvType.CLIENT ? MixinEnvironment.Side.CLIENT : MixinEnvironment.Side.SERVER);
 
 		FabricLauncherBase.pretendMixinPhases();
+
+		// Add required class paths to the ClassLoader that's used in the game.
+		for (URL cp : classpath) {
+			loader.addURL(cp);
+		}
 
 		try {
 			Class<?> c = ((ClassLoader) loader).loadClass(entryPoint);
@@ -186,13 +195,35 @@ public final class Knot extends FabricLauncherBase {
 				}
 			}
 		} else {
-			for (String filename : classpathStrings) {
-				File file = new File(filename);
-				if (!file.equals(gameFile)) {
-					try {
-						classpath.add(UrlUtil.asUrl(file));
-					} catch (UrlConversionException e) {
-						e.printStackTrace();
+			Boolean loadedManifest = false;
+
+			try (JarFile jf = new JarFile(gameFile)) {
+				ZipEntry manifestEntry = jf.getEntry("META-INF/MANIFEST.MF");
+				if (manifestEntry != null) {
+					Manifest manifest = new Manifest(jf.getInputStream(manifestEntry));
+					for(String cp : manifest.getMainAttributes().getValue(Attributes.Name.CLASS_PATH).split(" ")) {
+						try {
+							classpath.add(UrlUtil.asUrl(new File(cp)));
+						} catch (UrlConversionException e) {
+							e.printStackTrace();
+						}
+					}
+					loadedManifest = true;
+				}
+			}catch (Exception ex) {
+				ex.printStackTrace();
+			}
+
+			// Failed to load manifest classpaths, revert to old behaviour
+			if(!loadedManifest) {
+				for (String filename : classpathStrings) {
+					File file = new File(filename);
+					if (!file.equals(gameFile)) {
+						try {
+							classpath.add(UrlUtil.asUrl(file));
+						} catch (UrlConversionException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}
