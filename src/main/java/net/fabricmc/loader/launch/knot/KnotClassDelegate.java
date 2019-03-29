@@ -154,7 +154,7 @@ class KnotClassDelegate {
 			if (input != null) {
 				return transform(name, input);
 			} else {
-				return null;
+				return getMixinTransformer().transformClassBytes(name, name, null);
 			}
 		} else {
 			// Allow injecting fake loader classes.
