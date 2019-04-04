@@ -198,8 +198,6 @@ public final class Knot extends FabricLauncherBase {
 			Boolean loadedManifest = false;
 
 			try (JarFile jf = new JarFile(gameFile)) {
-				classpath.add(UrlUtil.asUrl(gameFile));
-
 				ZipEntry manifestEntry = jf.getEntry("META-INF/MANIFEST.MF");
 				if (manifestEntry != null) {
 					Manifest manifest = new Manifest(jf.getInputStream(manifestEntry));
