@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.function.Consumer;
 
+import com.google.common.base.Strings;
+
 public class EntrypointPatchHookStarMade extends EntrypointPatch {
 	public EntrypointPatchHookStarMade(EntrypointTransformer transformer) {
 		super(transformer);
@@ -49,7 +51,9 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 		}
 
 		try {
-			String gameEntrypoint = null;
+			String clientEntrypoint = null;
+			String serverEntrypoint = null;
+			String mainMenuEntrypoint = null;
 			boolean serverHasFile = true;
 			ClassNode mainClass = loadClass(launcher, entrypoint);
 
@@ -61,13 +65,9 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 				throw new RuntimeException("Server environment is unsupported at this time");
 			}
 
+			/* Lets not worry about server side mods for now.
 			// Each server start will invoke Starter.getServerRunnable where a new server class instance is created.
-			// Each client start will invoke Starter.startClient where a new client class instance is created. (Actual game play)
-			//  - However, this does not work at the time of the main menu is launched.
-
-			// Find the real method and inject our own.
-
-			if (type == EnvType.SERVER) {
+			if (Strings.isNullOrEmpty(serverEntrypoint)) {
 				MethodNode startServer = findMethod(mainClass, (method) -> method.name.equals("getServerRunnable") && method.desc.equals("(Z)Ljava/lang/Runnable;") && isPublicStatic(method.access));
 				if (startServer == null) {
 					throw new RuntimeException("Could not find initializeServer method in " + entrypoint + "!");
@@ -75,17 +75,32 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 
 				// look for invokespecial obfuscated_class_xxx.<init>(Lorg/schema/schine/network/client/HostPortLoginName;ZLobfuscated_class_yyy;)V
 				MethodInsnNode newGameInsn = (MethodInsnNode) findInsn(startServer,
-					(insn) -> insn.getOpcode() == Opcodes.INVOKESPECIAL && ((MethodInsnNode) insn).desc.equals("(Z)V"),
-					true
+				(insn) -> insn.getOpcode() == Opcodes.INVOKESPECIAL && ((MethodInsnNode) insn).desc.equals("(Z)V"),
+				true
 				);
 
 				if (newGameInsn != null) {
-					gameEntrypoint = newGameInsn.owner.replace('/', '.');
+					serverEntrypoint = newGameInsn.owner.replace('/', '.');
 				}
-			}
 
-			// TODO: Find both server and client and hook into both
-			if (gameEntrypoint == null) {
+				if (type == EnvType.SERVER) {
+					ListIterator<AbstractInsnNode> it = gameMethod.instructions.iterator();
+					// Server-side: first argument (or null!) is runDirectory, run at end of init
+					moveBefore(it, Opcodes.RETURN);
+					// runDirectory
+					if (serverHasFile) {
+						it.add(new VarInsnNode(Opcodes.ALOAD, 1));
+					} else {
+						it.add(new InsnNode(Opcodes.ACONST_NULL));
+					}
+					finishEntrypoint(type, it);
+					patched = true;
+				} else {
+			}
+			*/
+
+			// Each client start will invoke Starter.startClient where a new client class instance is created. (Actual game play)
+			if (Strings.isNullOrEmpty(clientEntrypoint)) {
 				MethodNode startClient = findMethod(mainClass, (method) -> method.name.equals("startClient") && method.desc.startsWith("(Lorg/schema/schine/network/client/HostPortLoginName;Z") && isPublicStatic(method.access));
 				if (startClient == null) {
 					throw new RuntimeException("Could not find initialize method in " + entrypoint + "!");
@@ -98,91 +113,73 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 				);
 
 				if (newGameInsn != null) {
-					gameEntrypoint = newGameInsn.owner.replace('/', '.');
-				}
-			}
-
-			if (gameEntrypoint == null) {
-				throw new RuntimeException("Could not find game constructor in " + entrypoint + "!");
-			}
-
-			debug("Found game constructor: " + entrypoint + " -> " + gameEntrypoint);
-			ClassNode gameClass = gameEntrypoint.equals(entrypoint) ? mainClass : loadClass(launcher, gameEntrypoint);
-			if (gameClass == null) {
-				throw new RuntimeException("Could not load game class " + gameEntrypoint + "!");
-			}
-
-			MethodNode gameMethod = null;
-			MethodNode gameConstructor = null;
-			int gameMethodQuality = 0;
-
-			for (MethodNode gmCandidate : gameClass.methods) {
-				if (gmCandidate.name.equals("<init>")) {
-					gameConstructor = gmCandidate;
-					if (gameMethodQuality < 1) {
-						gameMethod = gmCandidate;
-						gameMethodQuality = 1;
-					}
-				} else if (gmCandidate.name.equals("run")) {
-					gameConstructor = gmCandidate;
-					if (gameMethodQuality < 2) {
-						gameMethod = gmCandidate;
-						gameMethodQuality = 2;
-					}
-				}
-			}
-
-			if (gameMethod == null) {
-				throw new RuntimeException("Could not find game constructor method in " + gameClass.name + "!");
-			}
-
-			boolean patched = false;
-			debug("Patching game constructor " + gameMethod.name + gameMethod.desc);
-
-			if (type == EnvType.SERVER) {
-				ListIterator<AbstractInsnNode> it = gameMethod.instructions.iterator();
-				// Server-side: first argument (or null!) is runDirectory, run at end of init
-				moveBefore(it, Opcodes.RETURN);
-				// runDirectory
-				if (serverHasFile) {
-					it.add(new VarInsnNode(Opcodes.ALOAD, 1));
+					clientEntrypoint = newGameInsn.owner.replace('/', '.');
 				} else {
-					it.add(new InsnNode(Opcodes.ACONST_NULL));
+					throw new RuntimeException("Could not find game constructor in " + entrypoint + "!");
 				}
-				finishEntrypoint(type, it);
-				patched = true;
-			} else {
+
+				debug("Found game constructor: " + entrypoint + " -> " + clientEntrypoint);
+				ClassNode clientClass = clientEntrypoint.equals(entrypoint) ? mainClass : loadClass(launcher, clientEntrypoint);
+				if (clientClass == null) {
+					throw new RuntimeException("Could not load client runner " + clientEntrypoint + "!");
+				}
+
+				MethodNode gameMethod = clientClass.methods.stream()
+					.filter(method -> method.name.equals("run")).findFirst()
+					.orElseThrow(() -> new RuntimeException("Could not find game constructor method in " + clientClass.name + "!"));
+
+				debug("Patching client runner " + gameMethod.name + gameMethod.desc);
+
 				ListIterator<AbstractInsnNode> it = gameMethod.instructions.iterator();
-				// Client-side:
-				// - if constructor, identify runDirectory field + location, run immediately after
-				// - if non-constructor (init method), head
-
-				if (gameConstructor == null) {
-					throw new RuntimeException("Non-applet client-side, but could not find constructor?");
-				}
-
-				if(!gameMethod.name.equals("run"))
-				{
-					moveBefore(it, Opcodes.RETURN);
-				}
 				it.add(new InsnNode(Opcodes.ACONST_NULL));
 				finishEntrypoint(type, it);
 
-				patched = true;
+				classEmitter.accept(clientClass);
+				info("Patched client runner " + gameMethod.name + gameMethod.desc);
 			}
 
-			if (!patched) {
-				throw new RuntimeException("Game constructor patch not applied!");
-			}
+			// Each client start will invoke Starter.startClient where a new client class instance is created. (Actual game play)
+			if (Strings.isNullOrEmpty(mainMenuEntrypoint)) {
+				MethodNode startMainMenu = findMethod(mainClass, (method) -> method.name.equals("startMainMenu") && method.desc.equals("()V") && isPublicStatic(method.access));
+				if (startMainMenu == null) {
+					throw new RuntimeException("Could not find initialize method in " + entrypoint + "!");
+				}
 
-			if (gameClass != mainClass) {
-				classEmitter.accept(gameClass);
-			} else {
-				classEmitter.accept(mainClass);
+				// Look for the first invokespecial class_xxx.<init>()V
+				MethodInsnNode newGameInsn = (MethodInsnNode) findInsn(startMainMenu,
+					(insn) -> insn.getOpcode() == Opcodes.INVOKESPECIAL && ((MethodInsnNode) insn).name.equals("<init>") && ((MethodInsnNode) insn).desc.equals("()V"),
+					false
+				);
+
+				if (newGameInsn != null) {
+					mainMenuEntrypoint = newGameInsn.owner.replace('/', '.');
+				} else {
+					throw new RuntimeException("Could not find main menu constructor in " + entrypoint + "!");
+				}
+
+				debug("Found main menu constructor: " + entrypoint + " -> " + mainMenuEntrypoint);
+				ClassNode mainMenuClass = mainMenuEntrypoint.equals(entrypoint) ? mainClass : loadClass(launcher, mainMenuEntrypoint);
+				if (mainMenuClass == null) {
+					throw new RuntimeException("Could not load client runner " + mainMenuEntrypoint + "!");
+				}
+
+				MethodNode gameConstructor = mainMenuClass.methods.stream()
+					.filter(method -> method.name.equals("<init>")).findFirst()
+					.orElseThrow(() -> new RuntimeException("Could not find game constructor method in " + mainMenuClass.name + "!"));
+
+				debug("Patching main menu " + gameConstructor.name + gameConstructor.desc);
+
+				ListIterator<AbstractInsnNode> it = gameConstructor.instructions.iterator();
+				moveBefore(it, Opcodes.RETURN);
+
+				it.add(new InsnNode(Opcodes.ACONST_NULL));
+				finishEntrypoint(type, it);
+
+				classEmitter.accept(mainMenuClass);
+				info("Patched main menu " + gameConstructor.name + gameConstructor.desc);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
 }
