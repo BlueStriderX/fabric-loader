@@ -182,6 +182,7 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 				}
 
 				launcher.propose(UrlUtil.asUrl(deobfJarFile));
+				launcher.proposeJarClasspaths(minecraftJar);
 				minecraftJar = deobfJarFile;
 			} catch (IOException | UrlConversionException e) {
 				throw new RuntimeException(e);
