@@ -25,7 +25,7 @@ plugins {
 	id 'maven-publish'
 
 	id 'eclipse'
-	id("fabric-loom") version "0.3.0-SNAPSHOT"
+	id('com.github.distortsm.navigator') version "v0.3.1"
 }
 
 sourceCompatibility = 1.8
@@ -52,11 +52,12 @@ repositories {
 		name = 'mojang'
 		url = 'https://libraries.minecraft.net/'
 	}
+	maven { url 'https://jitpack.io' }
 }
 
 starmade{
 	version = "0.201.370"
-	mappings "net.distortsm:reality:0.201.370"
+	mappings "com.github.distortsm:Reality:0.201.370.1"
 }
 
 dependencies {
