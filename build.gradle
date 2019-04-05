@@ -133,6 +133,14 @@ String getClasspathEntries(){
 	return classPath;
 }
 
+shadowJar {
+    archiveName = "$baseName-$version.$extension"
+}
+
+artifacts {
+    archives shadowJar
+}
+
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
