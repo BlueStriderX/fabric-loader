@@ -135,7 +135,7 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 				finishEntrypoint(type, it);
 
 				classEmitter.accept(clientClass);
-				info("Patched client runner " + gameMethod.name + gameMethod.desc);
+				debug("Patched client runner " + gameMethod.name + gameMethod.desc);
 			}
 
 			// Each client start will invoke Starter.startClient where a new client class instance is created. (Actual game play)
@@ -176,7 +176,7 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 				finishEntrypoint(type, it);
 
 				classEmitter.accept(mainMenuClass);
-				info("Patched main menu " + gameConstructor.name + gameConstructor.desc);
+				debug("Patched main menu " + gameConstructor.name + gameConstructor.desc);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
