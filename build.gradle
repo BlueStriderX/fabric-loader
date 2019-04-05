@@ -7,6 +7,7 @@ plugins {
 	id 'maven-publish'
 
 	id 'eclipse'
+	id 'com.github.johnrengelman.shadow' version '4.0.4'
 	id('com.github.distortsm.navigator') version "v0.3.1"
 }
 
@@ -107,6 +108,7 @@ task copyJsonLw(type: Copy, dependsOn: ["remapJar"]) {
 	into 'build/libs'
 }
 
+tasks.build.dependsOn "shadowJar"
 tasks.build.dependsOn "copyJson"
 tasks.build.dependsOn "copyJsonLw"
 
