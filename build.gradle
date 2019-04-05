@@ -7,7 +7,7 @@ plugins {
 	id 'maven-publish'
 
 	id 'eclipse'
-	id("fabric-loom") version "0.3.0-SNAPSHOT"
+	id('com.github.distortsm.navigator') version "v0.3.1"
 }
 
 sourceCompatibility = 1.8
@@ -34,11 +34,12 @@ repositories {
 		name = 'mojang'
 		url = 'https://libraries.minecraft.net/'
 	}
+	maven { url 'https://jitpack.io' }
 }
 
 starmade{
 	version = "0.201.370"
-	mappings "net.distortsm:reality:0.201.370"
+	mappings "com.github.distortsm:Reality:0.201.370.1"
 }
 
 dependencies {
@@ -130,23 +131,12 @@ String getClasspathEntries(){
 	return classPath;
 }
 
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
-
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
 			// add all the jars that should be included when publishing to maven
 			artifact(jar) {
 				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
 			}
 			artifact(file('src/main/resources/fabric-installer.json')) {
 				builtBy remapJar
