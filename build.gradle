@@ -1,24 +1,6 @@
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import net.fabricmc.loom.NavigatorGradlePlugin
-
-buildscript {
-	repositories {
-		mavenCentral()
-		maven {
-			name = 'Fabric'
-			url = 'https://maven.fabricmc.net/'
-		}
-		maven {
-			name = 'mojang'
-			url = 'https://libraries.minecraft.net/'
-		}
-	}
-	dependencies {
-		classpath 'net.fabricmc:fabric-loom:0.3.0-SNAPSHOT'
-	}
-}
 
 plugins {
 	id 'java'
