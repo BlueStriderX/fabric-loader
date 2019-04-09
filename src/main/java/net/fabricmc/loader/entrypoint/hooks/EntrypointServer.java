@@ -17,6 +17,7 @@
 package net.fabricmc.loader.entrypoint.hooks;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.FabricLoader;
 import net.fabricmc.loader.api.EntrypointException;
@@ -28,9 +29,7 @@ public final class EntrypointServer {
 		if (runDir == null) {
 			runDir = new File(".");
 		}
-
-		FabricLoader.INSTANCE.instantiateMods(runDir, gameInstance);
-		FabricLoader.INSTANCE.getEntrypoints("main", ModInitializer.class).forEach(ModInitializer::onInitialize);
+		FabricLoader.INSTANCE.setGameInstance(gameInstance, EnvType.SERVER);
 		FabricLoader.INSTANCE.getEntrypoints("server", DedicatedServerModInitializer.class).forEach(DedicatedServerModInitializer::onInitializeServer);
 	}
 }

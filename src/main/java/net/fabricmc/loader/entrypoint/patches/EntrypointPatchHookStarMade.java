@@ -93,7 +93,7 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 					} else {
 						it.add(new InsnNode(Opcodes.ACONST_NULL));
 					}
-					finishEntrypoint(type, it);
+					finishEntrypoint(EnvType.SERVER, it);
 					patched = true;
 				} else {
 			}
@@ -132,7 +132,7 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 
 				ListIterator<AbstractInsnNode> it = gameMethod.instructions.iterator();
 				it.add(new InsnNode(Opcodes.ACONST_NULL));
-				finishEntrypoint(type, it);
+				finishEntrypoint(EnvType.CLIENT, it);
 
 				classEmitter.accept(clientClass);
 				debug("Patched client runner " + gameMethod.name + gameMethod.desc);
@@ -173,7 +173,7 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 				moveBefore(it, Opcodes.RETURN);
 
 				it.add(new InsnNode(Opcodes.ACONST_NULL));
-				finishEntrypoint(type, it);
+				finishEntrypoint(EnvType.MAIN_MENU, it);
 
 				classEmitter.accept(mainMenuClass);
 				debug("Patched main menu " + gameConstructor.name + gameConstructor.desc);

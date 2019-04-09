@@ -18,5 +18,6 @@ package net.fabricmc.api;
 
 public enum EnvType {
 	CLIENT,
-	SERVER
+	SERVER,
+	MAIN_MENU,
 }

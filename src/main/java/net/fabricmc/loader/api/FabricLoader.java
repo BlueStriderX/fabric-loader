@@ -79,7 +79,7 @@ public interface FabricLoader {
 	 * current environment type.
 	 * @return A client or server instance object.
 	 */
-	Object getGameInstance();
+	Object getGameInstance(EnvType env);
 
 	/**
 	 * Get the current game working directory.

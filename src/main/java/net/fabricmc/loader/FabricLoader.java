@@ -55,7 +55,8 @@ public class FabricLoader implements net.fabricmc.loader.api.FabricLoader {
 
 	private boolean frozen = false;
 
-	private Object gameInstance;
+	private Object clientInstance;
+	private Object serverInstance;
 
 	private File gameDir;
 	private File configDir;
@@ -80,9 +81,24 @@ public class FabricLoader implements net.fabricmc.loader.api.FabricLoader {
 		this.configDir = new File(gameDir, "config");
 	}
 
+	public void setGameInstance(Object gameInstance, EnvType env) {
+		if (env == EnvType.CLIENT) {
+			clientInstance = gameInstance;
+		} else if (env == EnvType.SERVER) {
+			serverInstance = gameInstance;
+		} else {
+			throw new RuntimeException("Invalid EnvType");
+		}
+	}
+
 	@Override
-	public Object getGameInstance() {
-		return gameInstance;
+	public Object getGameInstance(EnvType env) {
+		if (env == EnvType.CLIENT) {
+			return clientInstance;
+		} else if (env == EnvType.SERVER) {
+			return serverInstance;
+		}
+		throw new RuntimeException("Invalid EnvType");
 	}
 
 	@Override
@@ -275,12 +291,10 @@ public class FabricLoader implements net.fabricmc.loader.api.FabricLoader {
 		mods = sorted;
 	} */
 
-	public void instantiateMods(File newRunDir, Object gameInstance) {
+	public void instantiateMods(File newRunDir) {
 		if (!frozen) {
 			throw new RuntimeException("Cannot instantiate mods when not frozen!");
 		}
-
-		this.gameInstance = gameInstance;
 
 		if (gameDir != null) {
 			try {
