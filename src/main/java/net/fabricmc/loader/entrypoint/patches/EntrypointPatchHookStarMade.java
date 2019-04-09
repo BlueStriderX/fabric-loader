@@ -65,45 +65,50 @@ public class EntrypointPatchHookStarMade extends EntrypointPatch {
 				throw new RuntimeException("Server environment is unsupported at this time");
 			}
 
-			/* Lets not worry about server side mods for now.
 			// Each server start will invoke Starter.getServerRunnable where a new server class instance is created.
 			if (Strings.isNullOrEmpty(serverEntrypoint)) {
-				MethodNode startServer = findMethod(mainClass, (method) -> method.name.equals("getServerRunnable") && method.desc.equals("(Z)Ljava/lang/Runnable;") && isPublicStatic(method.access));
-				if (startServer == null) {
-					throw new RuntimeException("Could not find initializeServer method in " + entrypoint + "!");
+				MethodNode getServerRunnable = findMethod(mainClass, (method) -> method.name.equals("getServerRunnable") && method.desc.equals("(Z)Ljava/lang/Runnable;") && isPublicStatic(method.access));
+				if (getServerRunnable == null) {
+					throw new RuntimeException("Could not find getServerRunnable method in " + entrypoint + "!");
 				}
 
-				// look for invokespecial obfuscated_class_xxx.<init>(Lorg/schema/schine/network/client/HostPortLoginName;ZLobfuscated_class_yyy;)V
-				MethodInsnNode newGameInsn = (MethodInsnNode) findInsn(startServer,
-				(insn) -> insn.getOpcode() == Opcodes.INVOKESPECIAL && ((MethodInsnNode) insn).desc.equals("(Z)V"),
-				true
+				// look for invokespecial obfuscated_class_xxx.<init>(Z)V
+				MethodInsnNode newServerInsn = (MethodInsnNode) findInsn(getServerRunnable,
+					(insn) -> insn.getOpcode() == Opcodes.INVOKESPECIAL && ((MethodInsnNode) insn).desc.equals("(Z)V"),
+					true
 				);
 
-				if (newGameInsn != null) {
-					serverEntrypoint = newGameInsn.owner.replace('/', '.');
+				if (newServerInsn != null) {
+					serverEntrypoint = newServerInsn.owner.replace('/', '.');
+				} else {
+					throw new RuntimeException("Could not find server constructor in " + entrypoint + "!");
 				}
 
-				if (type == EnvType.SERVER) {
-					ListIterator<AbstractInsnNode> it = gameMethod.instructions.iterator();
-					// Server-side: first argument (or null!) is runDirectory, run at end of init
-					moveBefore(it, Opcodes.RETURN);
-					// runDirectory
-					if (serverHasFile) {
-						it.add(new VarInsnNode(Opcodes.ALOAD, 1));
-					} else {
-						it.add(new InsnNode(Opcodes.ACONST_NULL));
-					}
-					finishEntrypoint(EnvType.SERVER, it);
-					patched = true;
-				} else {
+				debug("Found server constructor: " + entrypoint + " -> " + serverEntrypoint);
+				ClassNode serverClass = serverEntrypoint.equals(entrypoint) ? mainClass : loadClass(launcher, serverEntrypoint);
+				if (serverClass == null) {
+					throw new RuntimeException("Could not load server runner " + serverEntrypoint + "!");
+				}
+
+				MethodNode gameMethod = serverClass.methods.stream()
+					.filter(method -> method.name.equals("run")).findFirst()
+					.orElseThrow(() -> new RuntimeException("Could not find server constructor method in " + serverClass.name + "!"));
+
+				debug("Patching server runner " + gameMethod.name + gameMethod.desc);
+
+				ListIterator<AbstractInsnNode> it = gameMethod.instructions.iterator();
+				it.add(new InsnNode(Opcodes.ACONST_NULL));
+				finishEntrypoint(EnvType.SERVER, it);
+
+				classEmitter.accept(serverClass);
+				debug("Patched server runner " + gameMethod.name + gameMethod.desc);
 			}
-			*/
 
 			// Each client start will invoke Starter.startClient where a new client class instance is created. (Actual game play)
 			if (Strings.isNullOrEmpty(clientEntrypoint)) {
 				MethodNode startClient = findMethod(mainClass, (method) -> method.name.equals("startClient") && method.desc.startsWith("(Lorg/schema/schine/network/client/HostPortLoginName;Z") && isPublicStatic(method.access));
 				if (startClient == null) {
-					throw new RuntimeException("Could not find initialize method in " + entrypoint + "!");
+					throw new RuntimeException("Could not find startClient method in " + entrypoint + "!");
 				}
 
 				// look for invokespecial obfuscated_class_xxx.<init>(Lorg/schema/schine/network/client/HostPortLoginName;ZLobfuscated_class_yyy;)V
