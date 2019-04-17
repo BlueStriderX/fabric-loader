@@ -18,8 +18,10 @@ package net.fabricmc.loader;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.LanguageAdapter;
+import net.fabricmc.loader.api.MappingResolver;
 import net.fabricmc.loader.api.SemanticVersion;
 import net.fabricmc.loader.discovery.*;
+import net.fabricmc.loader.launch.common.FabricLauncher;
 import net.fabricmc.loader.launch.common.FabricLauncherBase;
 import net.fabricmc.loader.metadata.EntrypointMetadata;
 import net.fabricmc.loader.metadata.LoaderModMetadata;
@@ -58,6 +60,7 @@ public class FabricLoader implements net.fabricmc.loader.api.FabricLoader {
 	private Object clientInstance;
 	private Object serverInstance;
 
+	private MappingResolver mappingResolver;
 	private File gameDir;
 	private File configDir;
 
@@ -196,6 +199,18 @@ public class FabricLoader implements net.fabricmc.loader.api.FabricLoader {
 	@Override
 	public <T> List<T> getEntrypoints(String key, Class<T> type) {
 		return entrypointStorage.getEntrypoints(key, type);
+	}
+
+	@Override
+	public MappingResolver getMappingResolver() {
+		if (mappingResolver == null) {
+			mappingResolver = new FabricMappingResolver(
+				FabricLauncherBase.getLauncher().getMappingConfiguration()::getMappings,
+				FabricLauncherBase.getLauncher().getTargetNamespace()
+			);
+		}
+
+		return mappingResolver;
 	}
 
 	@Override

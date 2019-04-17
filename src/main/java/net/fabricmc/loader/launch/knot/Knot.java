@@ -90,7 +90,7 @@ public final class Knot extends FabricLauncherBase {
 		boolean useCompatibility = Boolean.parseBoolean(System.getProperty("fabric.loader.useCompatibilityClassLoader", "false"));
 		loader = useCompatibility ? new KnotCompatibilityClassLoader(isDevelopment(), envType) : new KnotClassLoader(isDevelopment(), envType);
 
-		String[] classpathStringsIn = System.getProperty("java.class.path").split(File.pathSeparator);
+		String[] classpathStringsIn = findClasspathCandidates();
 		List<String> classpathStrings = new ArrayList<>(classpathStringsIn.length);
 
 		for (String s : classpathStringsIn) {
@@ -133,6 +133,43 @@ public final class Knot extends FabricLauncherBase {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private String[] findClasspathCandidates() {
+		Set<String> list = new HashSet<>();
+
+		// TODO: Is this still necessary?
+		String cmdLineClasspath = System.getProperty("java.class.path");
+		if (cmdLineClasspath != null) {
+			list.addAll(Arrays.asList(cmdLineClasspath.split(File.pathSeparator)));
+		}
+
+		try {
+			Enumeration<URL> manifests = this.getClass().getClassLoader().getResources("META-INF/MANIFEST.MF");
+			while (manifests.hasMoreElements()) {
+				try {
+					URL url = manifests.nextElement();
+					URL sourceUrl = UrlUtil.getSource("META-INF/MANIFEST.MF", url);
+					if (sourceUrl != null && sourceUrl.getProtocol().equals("file")) {
+						list.add(UrlUtil.asFile(sourceUrl).getAbsolutePath());
+					}
+				} catch (UrlConversionException e) {
+					// pass
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return list.toArray(new String[0]);
+	}
+
+	@Override
+	public String getTargetNamespace() {
+		// TODO: Won't work outside of Yarn
+		return isDevelopment ? "named" : "intermediary";
 	}
 
 	private int findEntrypoint(List<String> entrypointClasses, List<String> entrypointFilenames, File file) {

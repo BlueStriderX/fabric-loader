@@ -46,8 +46,7 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 	protected static Logger LOGGER = LogManager.getFormatterLogger("FabricLoader");
 	private static Map<String, Object> properties;
 	private static FabricLauncher launcher;
-	private static Mappings mappings;
-	private static boolean checkedMappings;
+	private static MappingConfiguration mappingConfiguration = new MappingConfiguration();
 
 	protected FabricLauncherBase() {
 		setLauncher(this);
@@ -62,41 +61,17 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 	}
 
 	@Override
-	public Mappings getMappings() {
-		if (!checkedMappings) {
-			InputStream mappingStream = FabricLauncherBase.class.getClassLoader().getResourceAsStream("mappings/mappings.tiny");
-
-			if (mappingStream != null) {
-				try {
-					long time = System.currentTimeMillis();
-					mappings = MappingsProvider.readTinyMappings(mappingStream);
-					LOGGER.debug("Loading mappings took " + (System.currentTimeMillis() - time) + " ms");
-				} catch (IOException ee) {
-					ee.printStackTrace();
-				}
-
-				try {
-					mappingStream.close();
-				} catch (IOException ee) {
-					ee.printStackTrace();
-				}
-			}
-
-			if (mappings == null) {
-				mappings = MappingsProvider.createEmptyMappings();
-			}
-
-			checkedMappings = true;
-		}
-
-		return mappings;
+	public MappingConfiguration getMappingConfiguration() {
+		return mappingConfiguration;
 	}
 
 	protected static void deobfuscate(File gameDir, File jarFile, FabricLauncher launcher) {
 		minecraftJar = jarFile;
 
-		Mappings mappings = launcher.isDevelopment() ? null : launcher.getMappings();
-		if (mappings != null && mappings.getNamespaces().contains("intermediary")) {
+		Mappings mappings = launcher.isDevelopment() ? null : mappingConfiguration.getMappings();
+		String targetNamespace = mappingConfiguration.getTargetNamespace();
+
+		if (mappings != null && mappings.getNamespaces().contains(targetNamespace)) {
 			LOGGER.debug("Fabric mapping file detected, applying...");
 
 			try {
@@ -109,10 +84,18 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 					deobfJarDir.mkdirs();
 				}
 
-				File deobfJarFile = new File(deobfJarDir, jarFile.getName());
+				// TODO: allow versioning mappings?
+				String deobfJarFilename = mappingConfiguration.getTargetNamespace() + "-" + jarFile.getName();
+				File deobfJarFile = new File(deobfJarDir, deobfJarFilename);
+				File deobfJarFileTmp = new File(deobfJarDir, deobfJarFilename + ".tmp");
 
 				Path jarPath = jarFile.toPath();
 				Path deobfJarPath = deobfJarFile.toPath();
+
+				if (deobfJarFileTmp.exists()) {
+					LOGGER.warn("Incomplete remapped file found! This means that the remapping process failed on the previous launch. If this persists, make sure to let us at Fabric know!");
+					deobfJarFileTmp.delete();
+				}
 
 				if (!deobfJarFile.exists()) {
 					boolean found = false;
@@ -120,11 +103,11 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 						LOGGER.info("Fabric is preparing JARs on first launch, this may take a few seconds...");
 
 						TinyRemapper remapper = TinyRemapper.newRemapper()
-							.withMappings(TinyRemapperMappingsHelper.create(mappings, "official", "intermediary"))
+							.withMappings(TinyRemapperMappingsHelper.create(mappings, "official", targetNamespace))
 							.rebuildSourceFilenames(true)
 							.build();
+
 						Set<Path> depPaths = new HashSet<>();
-						depPaths.add(jarPath);
 
 						for (URL url : launcher.getClasspathURLs()) {
 							try {
@@ -144,9 +127,10 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 						try (OutputConsumerPath outputConsumer = new OutputConsumerPath(deobfJarPath)) {
 							for (Path path : depPaths) {
 								LOGGER.debug("Appending '" + path + "' to remapper classpath");
-								remapper.read(path);
+								remapper.readClassPath(path);
 							}
-							remapper.apply(jarPath, outputConsumer);
+							remapper.readInputs(jarPath);
+							remapper.apply(outputConsumer);
 						} catch (IOException e) {
 							throw new RuntimeException(e);
 						} finally {
@@ -171,14 +155,20 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 							}
 						}
 
+						deobfJarFileTmp.renameTo(deobfJarFile);
+
 						JarFile jar = new JarFile(deobfJarFile);
 						if (jar.stream().noneMatch((e) -> e.getName().endsWith(".class"))) {
 							LOGGER.error("Generated deobfuscated JAR contains no classes! Trying again...");
-							Files.delete(deobfJarPath);
+							deobfJarFile.delete();
 						} else {
 							found = true;
 						}
 					}
+				}
+
+				if (!deobfJarFile.exists()) {
+					throw new RuntimeException("Remapped .JAR file does not exist after remapping! Cannot continue!");
 				}
 
 				launcher.propose(UrlUtil.asUrl(deobfJarFile));
