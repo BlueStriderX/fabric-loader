@@ -7,7 +7,6 @@ plugins {
 	id 'maven-publish'
 
 	id 'eclipse'
-	id 'com.github.johnrengelman.shadow' version '4.0.4'
 	id('com.github.distortsm.navigator') version "v0.3.1"
 }
 
@@ -18,7 +17,7 @@ archivesBaseName = "fabric-loader"
 
 // Fetch build number from Jenkins
 def ENV = System.getenv()
-version = version + "+" + (ENV.BUILD_NUMBER ? ("build." + ENV.BUILD_NUMBER) : "local")
+version = version + "." + (ENV.BUILD_NUMBER ? ENV.BUILD_NUMBER : "local")
 
 repositories {
 	mavenCentral()
@@ -39,8 +38,8 @@ repositories {
 }
 
 starmade{
-	version = "0.201.370"
-	mappings "com.github.distortsm:Reality:0.201.370.1"
+	version = project.starmade_version
+	mappings "com.github.distortsm:reality:${project.reality_mappings}"
 }
 
 dependencies {
@@ -108,7 +107,7 @@ task copyJsonLw(type: Copy, dependsOn: ["remapJar"]) {
 	into 'build/libs'
 }
 
-tasks.build.dependsOn "shadowJar"
+tasks.build.dependsOn "fatJar"
 tasks.build.dependsOn "copyJson"
 tasks.build.dependsOn "copyJsonLw"
 
@@ -133,23 +132,32 @@ String getClasspathEntries(){
 	return classPath;
 }
 
-shadowJar {
-    archiveName = "$baseName-$version.$extension"
-}
-
-artifacts {
-    archives shadowJar
+task fatJar(type: Jar) {
+    from {
+		configurations.compile.collect {
+			it.isDirectory() ? it : zipTree(it)
+		}
+	}
+	manifest {
+		attributes (
+			'Main-Class': 'net.fabricmc.loader.launch.server.FabricServerLauncher'
+		)
+	}
+	classifier = 'fat'
+	with jar
 }
 
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
+			from components.java
 			// add all the jars that should be included when publishing to maven
-			artifact(jar) {
-				builtBy remapJar
-			}
+
+			artifact fatJar
+
 			artifact(file('src/main/resources/fabric-installer.json')) {
 				builtBy remapJar
+				classifier = ''
 			}
 			artifact(file('src/main/resources/fabric-installer.launchwrapper.json')) {
 				builtBy remapJar
@@ -170,10 +178,6 @@ publishing {
 			}
 		}
 	}
-}
-
-artifacts {
-	archives file("src/main/resources/fabric-installer.json")
 }
 
 apply from: 'https://github.com/FabricMC/fabric-docs/raw/master/gradle/maven.gradle'
