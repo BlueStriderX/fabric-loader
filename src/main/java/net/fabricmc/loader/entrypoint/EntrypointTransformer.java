@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import net.fabricmc.loader.entrypoint.patches.EntrypointPatchBranding;
 import net.fabricmc.loader.entrypoint.patches.EntrypointPatchFML125;
 import net.fabricmc.loader.entrypoint.patches.EntrypointPatchHook;
+import net.fabricmc.loader.entrypoint.patches.EntrypointPatchHookStarMade;
 import net.fabricmc.loader.launch.common.FabricLauncher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +44,8 @@ public class EntrypointTransformer {
 		patches = ImmutableList.of(
 			new EntrypointPatchHook(this),
 			new EntrypointPatchBranding(this),
-			new EntrypointPatchFML125(this)
+			new EntrypointPatchFML125(this),
+			new EntrypointPatchHookStarMade(this)
 		);
 	}
 

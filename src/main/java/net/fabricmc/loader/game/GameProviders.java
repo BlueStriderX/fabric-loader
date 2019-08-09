@@ -27,6 +27,7 @@ public final class GameProviders {
 	public static List<GameProvider> create() {
 		List<GameProvider> providers = new ArrayList<>();
 		providers.add(new MinecraftGameProvider());
+		providers.add(new StarMadeGameProvider());
 		return providers;
 	}
 }
