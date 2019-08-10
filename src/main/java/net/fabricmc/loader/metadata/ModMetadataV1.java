@@ -27,6 +27,7 @@ import net.fabricmc.loader.util.version.VersionParsingException;
 import net.fabricmc.loader.util.version.VersionPredicateParser;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -321,6 +322,7 @@ public class ModMetadataV1 implements LoaderModMetadata {
 			@Override
 			public Person deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
 				Person person = new Person();
+				final ParameterizedType mapType = (ParameterizedType)new TypeToken<HashMap<String,String>>(){}.getType();
 
 				if (json.isJsonObject()) {
 					JsonObject obj = json.getAsJsonObject();
@@ -331,7 +333,7 @@ public class ModMetadataV1 implements LoaderModMetadata {
 					person.name = obj.get("name").getAsString();
 					if (obj.has("contact")) {
 						person.contact = new MapBackedContactInformation(
-							context.deserialize(obj.get("contact"), TypeToken.getParameterized(HashMap.class, String.class, String.class).getType())
+							context.deserialize(obj.get("contact"), mapType)
 						);
 					}
 				} else if (json.isJsonPrimitive()) {

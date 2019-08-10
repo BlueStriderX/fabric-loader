@@ -1,6 +1,10 @@
 pluginManagement {
 	repositories {
 		maven {
+			url = "https://jitpack.io"
+			name = "JITPack"
+		}
+		maven {
 			url = "http://maven.fabricmc.net"
 			name = "FabricMC"
 		}
