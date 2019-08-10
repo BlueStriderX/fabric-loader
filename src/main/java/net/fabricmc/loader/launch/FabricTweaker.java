@@ -19,6 +19,9 @@ package net.fabricmc.loader.launch;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.FabricLoader;
 import net.fabricmc.loader.entrypoint.EntrypointTransformer;
+import net.fabricmc.loader.entrypoint.patches.EntrypointPatchBranding;
+import net.fabricmc.loader.entrypoint.patches.EntrypointPatchFML125;
+import net.fabricmc.loader.entrypoint.patches.EntrypointPatchHook;
 import net.fabricmc.loader.launch.common.FabricLauncherBase;
 import net.fabricmc.loader.launch.common.FabricMixinBootstrap;
 import net.fabricmc.loader.util.UrlConversionException;
@@ -108,6 +111,9 @@ public abstract class FabricTweaker extends FabricLauncherBase implements ITweak
 			}
 		}
 
+		EntrypointTransformer.INSTANCE.addEntrypointPatch(new EntrypointPatchHook(EntrypointTransformer.INSTANCE));
+		EntrypointTransformer.INSTANCE.addEntrypointPatch(new EntrypointPatchBranding(EntrypointTransformer.INSTANCE));
+		EntrypointTransformer.INSTANCE.addEntrypointPatch(new EntrypointPatchFML125(EntrypointTransformer.INSTANCE));
 		EntrypointTransformer.INSTANCE.locateEntrypoints(this);
 
 		// Setup Mixin environment

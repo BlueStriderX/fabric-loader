@@ -21,6 +21,7 @@ import net.fabricmc.loader.entrypoint.patches.EntrypointPatchBranding;
 import net.fabricmc.loader.entrypoint.patches.EntrypointPatchFML125;
 import net.fabricmc.loader.entrypoint.patches.EntrypointPatchHook;
 import net.fabricmc.loader.entrypoint.patches.EntrypointPatchHookStarMade;
+import net.fabricmc.loader.game.GameProvider;
 import net.fabricmc.loader.launch.common.FabricLauncher;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,12 +42,14 @@ public class EntrypointTransformer {
 	private boolean entrypointsLocated = false;
 
 	public EntrypointTransformer() {
-		patches = ImmutableList.of(
-			new EntrypointPatchHook(this),
-			new EntrypointPatchBranding(this),
-			new EntrypointPatchFML125(this),
-			new EntrypointPatchHookStarMade(this)
-		);
+		patches = new ArrayList<EntrypointPatch>();
+	}
+
+	public void addEntrypointPatch(EntrypointPatch entrypointPatch) {
+		if (entrypointsLocated)
+			throw new RuntimeException("Entrypoints already located");
+
+		patches.add(entrypointPatch);
 	}
 
 	ClassNode loadClass(FabricLauncher launcher, String className) throws IOException {

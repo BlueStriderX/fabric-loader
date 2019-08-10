@@ -17,6 +17,7 @@
 package net.fabricmc.loader.game;
 
 import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.entrypoint.EntrypointTransformer;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -25,6 +26,7 @@ public interface GameProvider {
 	String getGameId();
 	String getGameName();
 	String getEntrypoint();
+	void populateEntrypointPatches(EntrypointTransformer transformer);
 	Path getLaunchDirectory();
 	boolean isObfuscated();
 	boolean requiresUrlClassLoader();

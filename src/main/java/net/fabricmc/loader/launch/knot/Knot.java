@@ -112,6 +112,7 @@ public final class Knot extends FabricLauncherBase {
 		}
 
 		// Locate entrypoints before switching class loaders
+		provider.populateEntrypointPatches(EntrypointTransformer.INSTANCE);
 		EntrypointTransformer.INSTANCE.locateEntrypoints(this);
 
 		Thread.currentThread().setContextClassLoader((ClassLoader) loader);

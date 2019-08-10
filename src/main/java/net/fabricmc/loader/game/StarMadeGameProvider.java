@@ -20,6 +20,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.Version;
+import net.fabricmc.loader.entrypoint.EntrypointTransformer;
+import net.fabricmc.loader.entrypoint.patches.EntrypointPatchHookStarMade;
 import net.fabricmc.loader.launch.common.FabricLauncherBase;
 import net.fabricmc.loader.util.Arguments;
 import net.fabricmc.loader.util.FileSystemUtil;
@@ -148,5 +150,10 @@ public class StarMadeGameProvider implements GameProvider {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public void populateEntrypointPatches(EntrypointTransformer transformer) {
+		transformer.addEntrypointPatch(new EntrypointPatchHookStarMade(transformer));
 	}
 }
