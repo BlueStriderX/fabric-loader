@@ -62,8 +62,10 @@ public final class Arguments {
 	public void parse(List<String> args) {
 		for (int i = 0; i < args.size(); i++) {
 			String arg = args.get(i);
-			if (arg.startsWith("--") && i < args.size() - 1) {
+			if (arg.startsWith("--") && i < args.size() - 1 && !args.get(i + 1).startsWith("-")) {
 				values.put(arg.substring(2), args.get(++i));
+			} else if (arg.startsWith("-") && i < args.size() - 1 && !args.get(i + 1).startsWith("-")) {
+				values.put(arg.substring(1), args.get(++i));
 			} else {
 				extraArgs.add(arg);
 			}
