@@ -49,6 +49,7 @@ public class StarMadeGameProvider implements GameProvider {
 	private Path gameJar;
 	private VersionData versionData;
 	private boolean hasModLoader = false;
+	private boolean hookMainMenu = false;
 
 	@Override
 	public String getGameId() {
@@ -137,6 +138,11 @@ public class StarMadeGameProvider implements GameProvider {
 		arguments.parse(argStrs);
 
 		FabricLauncherBase.processArgumentMap(arguments, envType);
+
+		// Check if the main menu is going to be launched
+		if(arguments.getExtraArgs().contains("-force")) {
+			hookMainMenu = true;
+		}
 	}
 
 	@Override
@@ -154,6 +160,6 @@ public class StarMadeGameProvider implements GameProvider {
 
 	@Override
 	public void populateEntrypointPatches(EntrypointTransformer transformer) {
-		transformer.addEntrypointPatch(new EntrypointPatchHookStarMade(transformer));
+		transformer.addEntrypointPatch(new EntrypointPatchHookStarMade(transformer, hookMainMenu));
 	}
 }
