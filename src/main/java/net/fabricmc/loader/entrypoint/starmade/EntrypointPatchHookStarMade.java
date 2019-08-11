@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package net.fabricmc.loader.entrypoint.patches;
+package net.fabricmc.loader.entrypoint.starmade;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.entrypoint.EntrypointPatch;
 import net.fabricmc.loader.entrypoint.EntrypointTransformer;
+import net.fabricmc.loader.game.StarMadeGameProvider;
 import net.fabricmc.loader.launch.common.FabricLauncher;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -34,10 +35,10 @@ import com.google.common.base.Strings;
 public class EntrypointPatchHookStarMade extends EntrypointPatch {
 	private final boolean hookMainMenu;
 
-	public EntrypointPatchHookStarMade(EntrypointTransformer transformer, boolean hookMainMenu) {
+	public EntrypointPatchHookStarMade(EntrypointTransformer transformer, StarMadeGameProvider starMadeGameProvider) {
 		super(transformer);
 
-		this.hookMainMenu = hookMainMenu;
+		this.hookMainMenu = starMadeGameProvider.getHookMainMenu();
 	}
 
 	private void finishEntrypoint(EnvType type, ListIterator<AbstractInsnNode> it) {

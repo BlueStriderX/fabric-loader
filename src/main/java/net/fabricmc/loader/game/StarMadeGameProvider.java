@@ -20,6 +20,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.Version;
+import net.fabricmc.loader.entrypoint.EntrypointTransformer;
+import net.fabricmc.loader.entrypoint.starmade.EntrypointPatchHookStarMade;
 import net.fabricmc.loader.launch.common.FabricLauncherBase;
 import net.fabricmc.loader.util.Arguments;
 import net.fabricmc.loader.util.FileSystemUtil;
@@ -31,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,6 +51,13 @@ public class StarMadeGameProvider implements GameProvider {
 	private VersionData versionData;
 	private boolean hasModLoader = false;
 	private boolean hookMainMenu = false;
+	private EntrypointTransformer entrypointTransformer = new EntrypointTransformer(it -> Arrays.asList(
+		new EntrypointPatchHookStarMade(it, this)
+	));
+
+	public boolean getHookMainMenu() {
+		return this.hookMainMenu;
+	}
 
 	@Override
 	public String getGameId() {
@@ -74,6 +84,11 @@ public class StarMadeGameProvider implements GameProvider {
 	@Override
 	public String getEntrypoint() {
 		return entrypoint;
+	}
+
+	@Override
+	public EntrypointTransformer getEntrypointTransformer() {
+		return entrypointTransformer;
 	}
 
 	@Override
