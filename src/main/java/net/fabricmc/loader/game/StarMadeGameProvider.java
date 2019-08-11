@@ -130,8 +130,8 @@ public class StarMadeGameProvider implements GameProvider {
 		entrypoint = entrypointResult.get().entrypointName;
 		gameJar = entrypointResult.get().entrypointPath;
 
-		try (FileSystemUtil.FileSystemDelegate jarFs = FileSystemUtil.getJarFileSystem(gameJar, false)) {
-			Path versionJson = jarFs.get().getPath("version.txt");
+		try {
+			Path versionJson = gameJar.getParent().resolve("version.txt");
 			if (Files.exists(versionJson)) {
 				versionData = new VersionData();
 				String[] versionString = new String(Files.readAllBytes(versionJson), StandardCharsets.UTF_8).split("#");
