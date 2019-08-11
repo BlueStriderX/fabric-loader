@@ -30,7 +30,9 @@ import org.spongepowered.asm.launch.MixinBootstrap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,11 +78,18 @@ public final class Knot extends FabricLauncherBase {
 		List<GameProvider> providers = GameProviders.create();
 		provider = null;
 
-		for (GameProvider p : providers) {
-			if (p.locateGame(envType, this.getClass().getClassLoader())) {
-				provider = p;
-				break;
+		try {
+			// Create a classloader with the provided gameJarPath
+			ClassLoader intermLoader = new URLClassLoader(new URL[] { gameJarFile.toURL() }, this.getClass().getClassLoader());
+
+			for (GameProvider p : providers) {
+				if (p.locateGame(envType, intermLoader)) {
+					provider = p;
+					break;
+				}
 			}
+		} catch(MalformedURLException ex) {
+			throw new RuntimeException(ex);
 		}
 
 		if (provider != null) {
