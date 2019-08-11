@@ -19,6 +19,7 @@ package net.fabricmc.loader.game;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.entrypoint.EntrypointTransformer;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public interface GameProvider {
 	boolean isObfuscated();
 	boolean requiresUrlClassLoader();
 	List<Path> getGameContextJars();
+	List<URL> getClassPaths();
 	boolean locateGame(EnvType envType, ClassLoader loader);
 	void acceptArguments(String... arguments);
 	EntrypointTransformer getEntrypointTransformer();

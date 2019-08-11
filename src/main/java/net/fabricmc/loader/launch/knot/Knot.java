@@ -122,6 +122,10 @@ public final class Knot extends FabricLauncherBase {
 			}
 		}
 
+		for (URL classPath : provider.getClassPaths()) {
+			loader.addURL(classPath);
+		}
+
 		// Locate entrypoints before switching class loaders
 		provider.getEntrypointTransformer().locateEntrypoints(this);
 

@@ -16,6 +16,7 @@
 
 package net.fabricmc.loader.game;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import net.fabricmc.api.EnvType;
@@ -30,6 +31,7 @@ import net.fabricmc.loader.util.FileSystemUtil;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -116,6 +118,11 @@ public class MinecraftGameProvider implements GameProvider {
 	@Override
 	public boolean requiresUrlClassLoader() {
 		return hasModLoader;
+	}
+
+	@Override
+	public List<URL> getClassPaths() {
+		return ImmutableList.of();
 	}
 
 	@Override

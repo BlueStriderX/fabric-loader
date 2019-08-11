@@ -25,10 +25,13 @@ import net.fabricmc.loader.entrypoint.starmade.EntrypointPatchHookStarMade;
 import net.fabricmc.loader.launch.common.FabricLauncherBase;
 import net.fabricmc.loader.util.Arguments;
 import net.fabricmc.loader.util.FileSystemUtil;
+import net.fabricmc.loader.util.UrlConversionException;
+import net.fabricmc.loader.util.UrlUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +39,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
 
 public class StarMadeGameProvider implements GameProvider {
 	static class VersionData {
@@ -115,6 +122,28 @@ public class StarMadeGameProvider implements GameProvider {
 		List<Path> list = new ArrayList<>();
 		list.add(gameJar);
 		return list;
+	}
+
+	@Override
+	public List<URL> getClassPaths() {
+		List<URL> classpath = new ArrayList<URL>();
+		try (JarFile jf = new JarFile(gameJar.toFile())) {
+			ZipEntry manifestEntry = jf.getEntry("META-INF/MANIFEST.MF");
+			if (manifestEntry != null) {
+				Manifest manifest = new Manifest(jf.getInputStream(manifestEntry));
+				for(String cp : manifest.getMainAttributes().getValue(Attributes.Name.CLASS_PATH).split(" ")) {
+					try {
+						classpath.add(UrlUtil.asUrl(new File(cp)));
+					} catch (UrlConversionException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return classpath;
 	}
 
 	@Override
