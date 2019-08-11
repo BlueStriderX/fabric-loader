@@ -22,6 +22,7 @@ import net.fabricmc.loader.util.UrlConversionException;
 import net.fabricmc.loader.util.UrlUtil;
 import net.fabricmc.loader.util.Arguments;
 import net.fabricmc.mappings.Mappings;
+import net.fabricmc.tinyremapper.NonClassCopyMode;
 import net.fabricmc.tinyremapper.OutputConsumerPath;
 import net.fabricmc.tinyremapper.TinyRemapper;
 import org.apache.logging.log4j.LogManager;
@@ -151,6 +152,8 @@ public abstract class FabricLauncherBase implements FabricLauncher {
 								LOGGER.debug("Appending '" + path + "' to remapper classpath");
 								remapper.readClassPath(path);
 							}
+							outputConsumer.addNonClassFiles(jarFile, NonClassCopyMode.FIX_META_INF, remapper);
+
 							remapper.readInputs(jarFile);
 							remapper.apply(outputConsumer);
 						} catch (IOException e) {
