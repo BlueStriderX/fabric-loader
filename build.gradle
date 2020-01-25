@@ -49,6 +49,7 @@ starmade{
 }
 
 dependencies {
+
 	// Minecraft's JAR uses these annotations
 	compile 'com.google.code.findbugs:jsr305:3.0.2'
 
@@ -75,8 +76,8 @@ dependencies {
 	}
 	compile 'net.sf.jopt-simple:jopt-simple:5.0.3'
 
-	compile 'org.apache.logging.log4j:log4j-api:2.8.1'
-	compile 'org.apache.logging.log4j:log4j-core:2.8.1'
+	compile 'org.apache.logging.log4j:log4j-api:2.13.0'
+	compile 'org.apache.logging.log4j:log4j-core:2.13.0'
 }
 
 processResources {
