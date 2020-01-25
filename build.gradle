@@ -45,7 +45,7 @@ repositories {
 
 starmade{
 	version = "0.202.81"
-	mappings "com.github.distortsm:realitymappings:0.202.
+	mappings "com.github.distortsm:realitymappings:0.202.81"
 }
 
 dependencies {
